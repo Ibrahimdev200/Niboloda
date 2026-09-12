@@ -1,0 +1,401 @@
+// Prisma Schema for NIBOLODA Ride-Hailing Platform
+// Designed for SQLite & PostgreSQL compatibility
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  phone         String         @unique
+  email         String?        @unique
+  passwordHash  String
+  role          String         @default("PASSENGER") // PASSENGER, DRIVER, ADMIN, SUPER_ADMIN
+  isActive      Boolean        @default(true)
+  isPhoneVerified Boolean      @default(false)
+  otpCode       String?
+  otpExpiresAt  DateTime?
+  dateOfBirth   DateTime?
+  gender        String?
+  state         String?
+  city          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  passenger     Passenger?
+  driver        Driver?
+  adminProfile  AdminProfile?
+  notifications Notification[]
+  supportTickets SupportTicket[]
+  emergencyEvents EmergencyEvent[]
+  auditLogs     AuditLog[]
+}
+
+model AdminProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  permissions  String   @default("[]") // JSON string of granted permission keys
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Passenger {
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  profilePhoto  String?
+  dateOfBirth   DateTime?
+  gender        String?
+  address       String?
+  state         String?
+  city          String?
+  rating        Float          @default(5.0)
+  totalRides    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  savedLocations   SavedLocation[]
+  emergencyContacts EmergencyContact[]
+  rides            Ride[]
+  ratings          Rating[]
+}
+
+model EmergencyContact {
+  id          String    @id @default(uuid())
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  relationship String
+  createdAt   DateTime  @default(now())
+}
+
+model SavedLocation {
+  id          String    @id @default(uuid())
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  label       String    // HOME, WORK, FAVORITE
+  name        String
+  address     String
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime  @default(now())
+}
+
+model Driver {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName          String
+  lastName           String
+  profilePhoto       String?
+  dateOfBirth        DateTime?
+  gender             String?
+  address            String?
+  state              String?
+  city               String?
+  licenseNumber      String?
+  licenseDocUrl      String?
+  governmentId       String?
+  governmentIdType   String?  // NIN, VOTERS_CARD, PASSPORT, NATIONAL_ID
+  governmentIdNumber String?
+  governmentIdDocUrl String?
+  preferredCity      String?
+  serviceAreas       String?
+  maxServiceRadiusKm Float    @default(30.0)
+  preferredWorkingHours String?
+  verificationStatus String   @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, REJECTED, MORE_INFO_REQUESTED, SUSPENDED
+  verificationNotes  String?
+  isVerified         Boolean  @default(false)
+  isOnline           Boolean  @default(false)
+  rating             Float    @default(5.0)
+  totalRides         Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  vehicle            Vehicle?
+  pricing            DriverPricing?
+  documents          DriverDocument[]
+  verificationHistory DriverVerificationHistory[]
+  locations          DriverLocation[]
+  subscriptions      Subscription[]
+  rides              Ride[]
+  ratings            Rating[]
+}
+
+model DriverDocument {
+  id                 String   @id @default(uuid())
+  driverId           String
+  driver             Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  docType            String   // GOVT_ID, DRIVER_LICENSE, PROFILE_PHOTO, VEHICLE_REG, VEHICLE_INSURANCE, ROADWORTHINESS
+  fileUrl            String
+  fileType           String   // image/jpeg, image/png, application/pdf
+  fileSize           Int
+  verificationStatus String   @default("PENDING")
+  createdAt          DateTime @default(now())
+}
+
+model DriverVerificationHistory {
+  id          String   @id @default(uuid())
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  status      String
+  adminUserId String?
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model Vehicle {
+  id                 String   @id @default(uuid())
+  driverId           String   @unique
+  driver             Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  make               String
+  model              String
+  year               Int
+  color              String
+  plateNumber        String   @unique
+  vehicleType        String?  // Sedan, SUV, Hatchback, Minivan, Bus, Other
+  seats              Int      @default(4)
+  registrationNumber String?
+  registrationDocUrl String?
+  insuranceNumber    String?
+  insuranceDocUrl    String?
+  roadworthinessDocUrl String?
+  photoUrl           String?
+  photoFrontUrl      String?
+  photoRearUrl       String?
+  photoInteriorUrl   String?
+  isVerified         Boolean  @default(false)
+  verificationStatus String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  verificationHistory VehicleVerificationHistory[]
+}
+
+model VehicleVerificationHistory {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  status      String
+  adminUserId String?
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model DriverPricing {
+  id             String   @id @default(uuid())
+  driverId       String   @unique
+  driver         Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  minFare        Float    @default(2000.0) // Minimum trip fare in NGN
+  preferredFare  Float    @default(2500.0) // Base starting fare
+  pricePerKm     Float    @default(250.0)  // Fare per KM
+  pricePerMin    Float    @default(50.0)   // Fare per Minute
+  minDistance    Float    @default(1.0)    // Min service distance in KM
+  maxDistance    Float    @default(50.0)   // Max service distance in KM
+  updatedAt      DateTime @updatedAt
+}
+
+model DriverLocation {
+  id        String   @id @default(uuid())
+  driverId  String   @unique
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  latitude  Float
+  longitude Float
+  heading   Float    @default(0.0)
+  speed     Float    @default(0.0)
+  updatedAt DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id           String         @id @default(uuid())
+  name         String         // Daily Pass, Weekly Pass, Monthly Unlimited, etc.
+  code         String         @unique // DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY
+  price        Float          // in NGN
+  durationDays Int            // 1, 7, 30, 90, 365
+  description  String?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          String           @id @default(uuid())
+  driverId    String
+  driver      Driver           @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  planId      String
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
+  status      String           @default("PENDING") // ACTIVE, EXPIRED, CANCELLED, PENDING
+  startDate   DateTime         @default(now())
+  expiryDate  DateTime
+  paymentRef  String?
+  amountPaid  Float
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  payments    Payment[]
+}
+
+model Ride {
+  id               String     @id @default(uuid())
+  passengerId      String
+  passenger        Passenger  @relation(fields: [passengerId], references: [id])
+  driverId         String
+  driver           Driver     @relation(fields: [driverId], references: [id])
+  status           String     @default("REQUESTED") // SEARCHING, REQUESTED, ACCEPTED, DRIVER_ARRIVING, DRIVER_ARRIVED, TRIP_STARTED, TRIP_COMPLETED, PAYMENT_PENDING, PAYMENT_COMPLETED, CANCELLED_BY_PASSENGER, CANCELLED_BY_DRIVER, EXPIRED, DISPUTED
+  
+  pickupName       String
+  pickupLat        Float
+  pickupLng        Float
+  destName         String
+  destLat          Float
+  destLng          Float
+  
+  distanceKm       Float
+  durationMin      Float
+  agreedFare       Float      // Locked agreed price in NGN
+  driverCommission Float      @default(0.0) // Strictly 0.0 NIBOLODA commission
+  
+  paymentStatus    String     @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  paymentMethod    String     @default("CARD") // CARD, USSD, TRANSFER, CASH
+  
+  cancellationReason String?
+  cancelledBy      String?    // PASSENGER, DRIVER
+  
+  createdAt        DateTime   @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+
+  statusHistory    RideStatusHistory[]
+  payments         Payment[]
+  ratings          Rating[]
+  supportTickets   SupportTicket[]
+  emergencyEvents  EmergencyEvent[]
+}
+
+model RideStatusHistory {
+  id        String   @id @default(uuid())
+  rideId    String
+  ride      Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  status    String   // Ride status at this step
+  changedBy String   // User ID or SYSTEM
+  notes     String?
+  timestamp DateTime @default(now())
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  rideId         String?
+  ride           Ride?         @relation(fields: [rideId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  userId         String
+  amount         Float
+  provider       String        @default("PAYSTACK") // PAYSTACK, MONNIFY, FLUTTERWAVE, MOCK
+  providerRef    String        @unique
+  status         String        @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  type           String        // RIDE_FARE, DRIVER_SUBSCRIPTION
+  gatewayFee     Float         @default(0.0)
+  driverEarnings Float         @default(0.0) // 100% of ride fare
+  commission     Float         @default(0.0) // 0% to platform
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Rating {
+  id          String    @id @default(uuid())
+  rideId      String    @unique
+  ride        Ride      @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id])
+  driverId    String
+  driver      Driver    @relation(fields: [driverId], references: [id])
+  ratingStars Int       // 1 to 5
+  reviewText  String?
+  createdAt   DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // RIDE, SUBSCRIPTION, SYSTEM, SAFETY
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rideId      String?
+  ride        Ride?    @relation(fields: [rideId], references: [id])
+  subject     String
+  description String
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status      String   @default("OPEN")   // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EmergencyEvent {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rideId        String?
+  ride          Ride?    @relation(fields: [rideId], references: [id])
+  latitude      Float
+  longitude     Float
+  emergencyType String   // SOS_TRIGGERED, ACCIDENT, SECURITY_THREAT
+  status        String   @default("ACTIVE") // ACTIVE, INVESTIGATING, RESOLVED
+  createdAt     DateTime @default(now())
+}
+
+model PromoCode {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  discountPercent Float
+  maxDiscount    Float
+  expiryDate     DateTime
+  usageLimit     Int       @default(100)
+  timesUsed      Int       @default(0)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+}
+
+model ServiceArea {
+  id        String   @id @default(uuid())
+  name      String   // Lagos Central, Abuja Metro, Port Harcourt, etc.
+  city      String
+  centerLat Float
+  centerLng Float
+  radiusKm  Float    @default(30.0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userRole  String?
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

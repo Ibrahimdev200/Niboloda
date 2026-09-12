@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NIBOLODA - Drivers Set the Price. Passengers Choose the Ride.</title>
+    <meta name="description" content="NIBOLODA is Nigeria's subscription-based ride-hailing marketplace. 0% commission on driver trip fares." />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Utility CSS used by the React interface. Kept in the document so the Vite app
+         remains zero-config while the visual system is being iterated. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              outfit: ['Outfit', 'sans-serif']
+            },
+            colors: {
+              brand: {
+                400: '#2dc77a',
+                500: '#008751',
+                600: '#006e42',
+                950: '#04170e'
+              }
+            },
+            boxShadow: {
+              glow: '0 16px 42px rgba(0, 135, 81, .22)'
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  </head>
+  <body class="bg-emerald-950 text-slate-100 antialiased font-sans">
+    <div id="root"></div>
+    <script type="module" src="/src/client/main.jsx"></script>
+  </body>
+</html>

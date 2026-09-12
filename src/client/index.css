@@ -1,0 +1,183 @@
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --primary-emerald: #00a968;
+  --primary-emerald-hover: #008751;
+  --dark-bg: #04170e;
+  --card-bg: rgba(10, 35, 23, 0.82);
+  --gold-accent: #fbbf24;
+  --surface: rgba(8, 28, 18, 0.8);
+  --line: rgba(110, 231, 183, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--dark-bg); scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--dark-bg);
+  color: #f1f5f9;
+  overflow-x: hidden;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 14% -8%, rgba(0, 169, 104, 0.20), transparent 30rem),
+    radial-gradient(circle at 100% 28%, rgba(245, 158, 11, 0.10), transparent 32rem),
+    var(--dark-bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Video Loader Keyframes & Animation FX */
+@keyframes carVibrate {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-1.5px) rotate(-0.3deg); }
+  50% { transform: translateY(0.8px) rotate(0.2deg); }
+  75% { transform: translateY(-1px) rotate(-0.1deg); }
+}
+
+@keyframes roadMove {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes speedLines {
+  0% { transform: translateX(100%); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateX(-150%); opacity: 0; }
+}
+
+@keyframes laserRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes headlightGlow {
+  0%, 100% { opacity: 0.65; transform: scaleX(1); }
+  50% { opacity: 0.95; transform: scaleX(1.1); }
+}
+
+@keyframes exhaustSmoke {
+  0% { transform: scale(0.3) translateX(0); opacity: 0.8; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.6) translateX(-120px) translateY(-15px); opacity: 0; }
+}
+
+.animate-car-engine {
+  animation: carVibrate 0.28s infinite linear;
+}
+
+.animate-road {
+  animation: roadMove 0.45s infinite linear;
+}
+
+.animate-headlight {
+  animation: headlightGlow 1.2s infinite ease-in-out;
+}
+
+.animate-laser-spin {
+  animation: laserRotate 4s infinite linear;
+}
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(17, 48, 31, 0.84), rgba(5, 25, 15, 0.76));
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  border: 1px solid var(--line);
+  box-shadow: 0 15px 42px rgba(0, 0, 0, 0.14);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(45, 199, 122, 0.55);
+  box-shadow: 0 18px 32px -12px rgba(0, 135, 81, 0.34);
+}
+
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .65; }
+input, textarea, select { transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px rgba(45, 199, 122, .13); }
+
+::selection { background: rgba(45, 199, 122, .78); color: white; }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(5, 25, 16, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 135, 81, 0.5);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 135, 81, 0.8);
+}
+
+/* Pulse Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 135, 81, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 135, 81, 0.8);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.animate-in { animation-duration: .24s; animation-fill-mode: both; }
+.fade-in { animation-name: fade-in; }
+.slide-in-from-top-2 { animation-name: slide-from-top; }
+.zoom-in-95 { animation-name: zoom-in; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-from-top { from { opacity: 0; transform: translateY(-.5rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes zoom-in { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+
+/* Driver Selection Radio & Cards */
+.driver-card-selected {
+  border-color: #008751 !important;
+  background: rgba(0, 135, 81, 0.15) !important;
+  box-shadow: 0 0 20px rgba(0, 135, 81, 0.3);
+}
+
+/* Leaflet Map overrides */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  background: #092015 !important;
+}
+
+.leaflet-tile {
+  filter: brightness(0.76) contrast(1.12) saturate(0.78) hue-rotate(14deg);
+}
+
+.leaflet-control-zoom a,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #0c2518 !important;
+  color: #e2f8ea !important;
+  border-color: rgba(110, 231, 183, .2) !important;
+}
+.leaflet-popup-content-wrapper { border: 1px solid rgba(110, 231, 183, .16); }
+.leaflet-popup-content { color: #e2f8ea !important; }
+
+@media (max-width: 640px) {
+  .leaflet-container { border-radius: .9rem; }
+  body { background-size: auto; }
+}
