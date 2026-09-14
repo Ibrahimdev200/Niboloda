@@ -7,7 +7,8 @@
     "dev": "node dev-all.js",
     "dev:client": "npx vite",
     "dev:server": "node src/server/index.js",
-    "build": "npx vite build",
+    "build": "prisma generate && vite build",
+    "postinstall": "prisma generate",
     "server": "node src/server/index.js",
     "db:push": "npx prisma db push",
     "db:seed": "node src/server/seed.js"
