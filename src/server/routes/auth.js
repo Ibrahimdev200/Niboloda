@@ -109,6 +109,25 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'An account with this phone or email already exists' });
     }
 
+    if (normalizedRole === 'DRIVER') {
+      if (licenseNumber) {
+        const existingLicense = await prisma.driver.findFirst({
+          where: { licenseNumber: String(licenseNumber).trim() }
+        });
+        if (existingLicense) {
+          return res.status(400).json({ error: 'An account with this driver license number already exists' });
+        }
+      }
+      if (vehiclePlate) {
+        const existingPlate = await prisma.vehicle.findFirst({
+          where: { plateNumber: String(vehiclePlate).toUpperCase().trim() }
+        });
+        if (existingPlate) {
+          return res.status(400).json({ error: 'A vehicle with this license plate number is already registered' });
+        }
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const otpCode = generate4DigitOtp(); // 4-digit code
 
