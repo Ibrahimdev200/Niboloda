@@ -7,4 +7,11 @@ if (!process.env.JWT_SECRET) {
 
 const app = require('../src/server/app');
 
-module.exports = app;
+module.exports = (req, res) => {
+  try {
+    return app(req, res);
+  } catch (err) {
+    console.error('Vercel Serverless Function Error:', err);
+    return res.status(500).json({ error: err.message || 'Vercel Function Error' });
+  }
+};
