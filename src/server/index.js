@@ -1,14 +1,13 @@
-const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 const path = require('path');
+const express = require('express');
 const { PORT } = require('./config');
 const prisma = require('./db');
 const { initSocketIO } = require('./services/socketService');
+const app = require('./app');
 
-// Express App setup
-const app = express();
+// HTTP Server setup
 const server = http.createServer(app);
 
 // Socket.IO setup
@@ -20,55 +19,6 @@ const io = new Server(server, {
 });
 
 initSocketIO(io, prisma);
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Import API Routes
-const authRoutes = require('./routes/auth');
-const passengerRoutes = require('./routes/passengers');
-const driverRoutes = require('./routes/drivers');
-const vehicleRoutes = require('./routes/vehicles');
-const locationRoutes = require('./routes/locations');
-const pricingRoutes = require('./routes/pricing');
-const rideRoutes = require('./routes/rides');
-const subscriptionRoutes = require('./routes/subscriptions');
-const paymentRoutes = require('./routes/payments');
-const ratingRoutes = require('./routes/ratings');
-const notificationRoutes = require('./routes/notifications');
-const supportRoutes = require('./routes/support');
-const emergencyRoutes = require('./routes/emergency');
-const adminRoutes = require('./routes/admin');
-const uploadRoutes = require('./routes/uploads');
-
-// Register API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/passengers', passengerRoutes);
-app.use('/api/drivers', driverRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/locations', locationRoutes);
-app.use('/api/pricing', pricingRoutes);
-app.use('/api/rides', rideRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/ratings', ratingRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/emergency', emergencyRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/uploads', uploadRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'online',
-    platform: 'NIBOLODA',
-    tagline: 'Drivers Set the Price. Passengers Choose the Ride.',
-    commissionRate: '0%',
-    timestamp: new Date()
-  });
-});
 
 // Serve frontend in production build if dist folder exists
 const distPath = path.join(__dirname, '../../dist');
