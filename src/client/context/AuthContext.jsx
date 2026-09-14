@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otpCode })
       });
-      return { success: true, message: data.message };
+      return { success: true, message: data.message, user: data.user };
     } catch (err) {
       return { success: false, error: err.message };
     }

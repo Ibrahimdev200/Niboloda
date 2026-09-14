@@ -18,6 +18,34 @@ const generate4DigitOtp = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
+const normalizePhone = (phone) => {
+  if (!phone) return '';
+  let cleaned = String(phone).trim().replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '+234' + cleaned.slice(1);
+  } else if (cleaned.startsWith('234')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
+};
+
+const normalizeEmail = (email) => {
+  if (!email) return '';
+  return String(email).trim().toLowerCase();
+};
+
+const buildUserSearchConditions = (input) => {
+  if (!input) return [];
+  const raw = String(input).trim();
+  const phoneClean = normalizePhone(raw);
+  const emailClean = normalizeEmail(raw);
+
+  const conditions = [{ phone: raw }, { email: raw }];
+  if (phoneClean && phoneClean !== raw) conditions.push({ phone: phoneClean });
+  if (emailClean && emailClean !== raw) conditions.push({ email: emailClean });
+  return conditions;
+};
+
 /**
  * POST /api/auth/register
  * Supports Passenger and Driver registration with real Supabase Auth email dispatch
@@ -217,10 +245,7 @@ router.post('/login', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: phoneOrEmail },
-          { email: phoneOrEmail }
-        ]
+        OR: buildUserSearchConditions(phoneOrEmail)
       },
       include: {
         passenger: true,
@@ -284,10 +309,7 @@ router.post('/forgot-password', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: phoneOrEmail },
-          { email: phoneOrEmail }
-        ]
+        OR: buildUserSearchConditions(phoneOrEmail)
       }
     });
 
@@ -346,10 +368,7 @@ router.post('/reset-password', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: phoneOrEmail },
-          { email: phoneOrEmail }
-        ]
+        OR: buildUserSearchConditions(phoneOrEmail)
       }
     });
 
@@ -408,10 +427,7 @@ router.post('/verify-otp', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone },
-          { email: phone }
-        ]
+        OR: buildUserSearchConditions(phone)
       }
     });
 
@@ -470,10 +486,7 @@ router.post('/resend-otp', async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone },
-          { email: phone }
-        ]
+        OR: buildUserSearchConditions(phone)
       }
     });
 

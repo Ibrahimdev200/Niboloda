@@ -60,6 +60,28 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     agreedToTerms: false
   });
 
+  // Form State for Driver Registration
+  const [driverForm, setDriverForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    dateOfBirth: '',
+    gender: 'Male',
+    address: '',
+    state: 'Lagos',
+    city: 'Lagos Island',
+    password: '',
+    confirmPassword: '',
+    licenseNumber: '',
+    vehicleMake: 'Toyota',
+    vehicleModel: 'Corolla',
+    vehicleYear: '2020',
+    vehicleColor: 'Silver',
+    vehiclePlate: '',
+    agreedToTerms: false
+  });
+
   // Form State for Login
   const [loginForm, setLoginForm] = useState({
     phoneOrEmail: '',
@@ -109,6 +131,11 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
   const updatePassengerField = (field) => (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setPassengerForm((prev) => ({ ...prev, [field]: val }));
+  };
+
+  const updateDriverField = (field) => (e) => {
+    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setDriverForm((prev) => ({ ...prev, [field]: val }));
   };
 
   const updateLoginField = (field) => (e) => {
@@ -176,6 +203,57 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
       setViewMode('OTP');
     } catch (err) {
       setError(err.message || 'Registration failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle Driver Registration Submission
+  const handleDriverSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (driverForm.password !== driverForm.confirmPassword) {
+      setError('Passwords do not match. Please re-enter your password.');
+      return;
+    }
+
+    if (!driverForm.agreedToTerms) {
+      setError('You must agree to NIBOLODA’s Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const data = await safeFetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...driverForm,
+          role: 'DRIVER'
+        })
+      });
+
+      if (!data.token) {
+        throw new Error(data.error || 'Driver registration failed. Please check your information.');
+      }
+
+      const activeOtp = data.otpCode || data.user?.otpCode;
+      setPendingAuth({
+        user: data.user,
+        token: data.token,
+        phone: data.user?.phone || driverForm.phone,
+        email: data.user?.email || driverForm.email,
+        otpCode: activeOtp
+      });
+      setOtpInput(activeOtp || '');
+      setResendCooldown(60);
+      setSuccessMsg(data.message || 'Driver registration successful! Enter your 4-digit code below.');
+      setViewMode('OTP');
+    } catch (err) {
+      setError(err.message || 'Driver registration failed.');
     } finally {
       setSubmitting(false);
     }
@@ -685,7 +763,243 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
               </div>
             )}
 
-            {/* 3. LOGIN SCREEN WITH FORGOT PASSWORD & PASSWORD SHOW/HIDE */}
+            {/* 3. PILOT / DRIVER REGISTRATION FORM */}
+            {viewMode === 'DRIVER_REG' && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-extrabold tracking-[.18em] text-amber-400 uppercase">
+                      PILOT / DRIVER ONBOARDING
+                    </span>
+                    <h2 className="mt-1 font-outfit text-2xl font-extrabold text-white">
+                      Driver Registration
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setViewMode('LANDING')}
+                    className="text-xs font-bold text-slate-400 hover:text-white inline-flex items-center gap-1"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" /> Back
+                  </button>
+                </div>
+
+                <form onSubmit={handleDriverSubmit} className="space-y-4 max-h-[540px] overflow-y-auto pr-1">
+                  
+                  {/* Section 1: Personal Details */}
+                  <div className="space-y-3">
+                    <span className="block text-xs font-extrabold text-amber-300 uppercase tracking-wider">
+                      1. Personal Information
+                    </span>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="First Name *" 
+                        value={driverForm.firstName} 
+                        onChange={updateDriverField('firstName')} 
+                        icon={<User className="h-4 w-4" />} 
+                        placeholder="Emeka" 
+                        required 
+                      />
+                      <Field 
+                        label="Last Name *" 
+                        value={driverForm.lastName} 
+                        onChange={updateDriverField('lastName')} 
+                        icon={<User className="h-4 w-4" />} 
+                        placeholder="Okafor" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="Phone Number *" 
+                        type="tel"
+                        value={driverForm.phone} 
+                        onChange={updateDriverField('phone')} 
+                        icon={<Phone className="h-4 w-4" />} 
+                        placeholder="+234 803 123 4567" 
+                        required 
+                      />
+                      <Field 
+                        label="Email Address" 
+                        type="email"
+                        value={driverForm.email} 
+                        onChange={updateDriverField('email')} 
+                        icon={<Mail className="h-4 w-4" />} 
+                        placeholder="driver@example.ng" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="Date of Birth" 
+                        type="date"
+                        value={driverForm.dateOfBirth} 
+                        onChange={updateDriverField('dateOfBirth')} 
+                      />
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-bold text-slate-300">Gender</span>
+                        <select 
+                          value={driverForm.gender} 
+                          onChange={updateDriverField('gender')}
+                          className="w-full rounded-xl border border-emerald-700/55 bg-emerald-950/70 p-3 text-xs text-white outline-none focus:border-emerald-400"
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <Field 
+                      label="Driver License Number *" 
+                      value={driverForm.licenseNumber} 
+                      onChange={updateDriverField('licenseNumber')} 
+                      icon={<Shield className="h-4 w-4" />} 
+                      placeholder="DL-987654321" 
+                      required 
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="State *" 
+                        value={driverForm.state} 
+                        onChange={updateDriverField('state')} 
+                        placeholder="Lagos" 
+                        required 
+                      />
+                      <Field 
+                        label="City *" 
+                        value={driverForm.city} 
+                        onChange={updateDriverField('city')} 
+                        placeholder="Lagos Island" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 2: Vehicle Details */}
+                  <div className="space-y-3 pt-3 border-t border-emerald-800/40">
+                    <span className="block text-xs font-extrabold text-amber-300 uppercase tracking-wider">
+                      2. Primary Vehicle Details
+                    </span>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="Vehicle Make *" 
+                        value={driverForm.vehicleMake} 
+                        onChange={updateDriverField('vehicleMake')} 
+                        icon={<Car className="h-4 w-4" />} 
+                        placeholder="Toyota" 
+                        required 
+                      />
+                      <Field 
+                        label="Vehicle Model *" 
+                        value={driverForm.vehicleModel} 
+                        onChange={updateDriverField('vehicleModel')} 
+                        placeholder="Corolla" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <Field 
+                        label="Year *" 
+                        type="number"
+                        value={driverForm.vehicleYear} 
+                        onChange={updateDriverField('vehicleYear')} 
+                        placeholder="2020" 
+                        required 
+                      />
+                      <Field 
+                        label="Color *" 
+                        value={driverForm.vehicleColor} 
+                        onChange={updateDriverField('vehicleColor')} 
+                        placeholder="Silver" 
+                        required 
+                      />
+                      <Field 
+                        label="License Plate *" 
+                        value={driverForm.vehiclePlate} 
+                        onChange={updateDriverField('vehiclePlate')} 
+                        placeholder="KJA-123AA" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 3: Password */}
+                  <div className="space-y-3 pt-3 border-t border-emerald-800/40">
+                    <span className="block text-xs font-extrabold text-amber-300 uppercase tracking-wider">
+                      3. Account Password
+                    </span>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field 
+                        label="Password *" 
+                        type="password"
+                        value={driverForm.password} 
+                        onChange={updateDriverField('password')} 
+                        icon={<LockKeyhole className="h-4 w-4" />}
+                        placeholder="Min 6 characters" 
+                        required 
+                      />
+                      <Field 
+                        label="Confirm Password *" 
+                        type="password"
+                        value={driverForm.confirmPassword} 
+                        onChange={updateDriverField('confirmPassword')} 
+                        icon={<LockKeyhole className="h-4 w-4" />}
+                        placeholder="Re-enter password" 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Terms Checkbox */}
+                  <div className="pt-3 border-t border-emerald-800/40">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+                      <input 
+                        type="checkbox"
+                        checked={driverForm.agreedToTerms}
+                        onChange={updateDriverField('agreedToTerms')}
+                        className="mt-0.5 h-4 w-4 accent-amber-500 rounded"
+                        required
+                      />
+                      <span>
+                        I agree to NIBOLODA’s <strong className="text-amber-400">Driver Partner Terms</strong> and 0% commission guidelines.
+                      </span>
+                    </label>
+                  </div>
+
+                  {error && (
+                    <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/60 p-3 text-xs text-red-200">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit"
+                    disabled={submitting || !driverForm.agreedToTerms}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3.5 text-xs font-extrabold text-slate-950 shadow-lg shadow-amber-950/50 transition hover:from-amber-400 hover:to-amber-500 disabled:opacity-50"
+                  >
+                    {submitting ? 'Registering Pilot…' : 'SUBMIT PILOT / DRIVER REGISTRATION'} <ArrowRight className="h-4 w-4" />
+                  </button>
+
+                  <div className="text-center pt-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setViewMode('LOGIN')} 
+                      className="text-xs text-slate-400 hover:text-white"
+                    >
+                      Already registered? Sign in
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* 4. LOGIN SCREEN WITH FORGOT PASSWORD & PASSWORD SHOW/HIDE */}
             {viewMode === 'LOGIN' && (
               <div className="space-y-6 animate-in fade-in">
                 <div>
