@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { safeFetch } from '../../utils/api';
 import { 
   ArrowRight, 
   Car, 
@@ -148,7 +149,7 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const data = await safeFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,9 +157,8 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
           role: 'PASSENGER'
         })
       });
-      const data = await response.json();
 
-      if (!response.ok || !data.token) {
+      if (!data.token) {
         throw new Error(data.error || 'Registration failed. Please check your information and try again.');
       }
 
@@ -184,13 +184,12 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const data = await safeFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm)
       });
-      const data = await response.json();
-      if (!response.ok || !data.token) {
+      if (!data.token) {
         throw new Error(data.error || 'Invalid credentials or account type selection.');
       }
       login(data.user, data.token);
@@ -209,15 +208,11 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const data = await safeFetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(forgotForm)
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Account not found with this phone number or email.');
-      }
 
       setResetForm({
         phoneOrEmail: forgotForm.phoneOrEmail,
@@ -256,7 +251,7 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      await safeFetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -265,10 +260,6 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
           newPassword: resetForm.newPassword
         })
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to reset password.');
-      }
 
       setSuccessMsg('Password updated successfully! Please sign in with your new password.');
       setLoginForm((prev) => ({
@@ -300,7 +291,7 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
           login(res.user || pendingAuth.user, pendingAuth.token);
         }, 600);
       } else {
-        setError('Invalid 4-digit verification code.');
+        setError(res.error || 'Invalid 4-digit verification code.');
       }
     } catch (err) {
       setError('Invalid 4-digit verification code.');
@@ -316,13 +307,11 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
     setSuccessMsg('');
 
     try {
-      const res = await fetch('/api/auth/resend-otp', {
+      const data = await safeFetch('/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: pendingAuth.phone })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to resend code');
 
       if (data.otpCode) {
         setOtpInput(data.otpCode);

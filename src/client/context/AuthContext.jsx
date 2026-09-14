@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { safeFetch } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -12,12 +13,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      fetch('/api/auth/me', {
+      safeFetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
-        .then(res => res.json())
         .then(data => {
-          if (data.user) {
+          if (data && data.user) {
             setUser(data.user);
             setActivePortal(data.user.role === 'DRIVER' ? 'DRIVER' : data.user.role.includes('ADMIN') ? 'ADMIN' : 'PASSENGER');
           } else {
@@ -47,13 +47,11 @@ export const AuthProvider = ({ children }) => {
 
   const verifyOtp = async (phone, otpCode) => {
     try {
-      const res = await fetch('/api/auth/verify-otp', {
+      const data = await safeFetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otpCode })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'OTP verification failed');
       return { success: true, message: data.message };
     } catch (err) {
       return { success: false, error: err.message };

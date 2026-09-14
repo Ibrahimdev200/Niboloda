@@ -4,7 +4,9 @@
   "description": "NIBOLODA - Subscription-Based Ride-Hailing Platform for Nigeria",
   "main": "src/server/index.js",
   "scripts": {
-    "dev": "npx vite",
+    "dev": "node dev-all.js",
+    "dev:client": "npx vite",
+    "dev:server": "node src/server/index.js",
     "build": "npx vite build",
     "server": "node src/server/index.js",
     "db:push": "npx prisma db push",
