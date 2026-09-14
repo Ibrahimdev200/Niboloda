@@ -8,7 +8,7 @@
  * Platform Commission = ₦0.00.
  */
 
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 class PaymentService {
   constructor(provider = 'PAYSTACK') {
@@ -19,7 +19,8 @@ class PaymentService {
    * Initializes a transaction for Subscription or Ride payment
    */
   async initializePayment({ userId, amount, email, phone, metadata, type }) {
-    const reference = `NIB_${type}_${Date.now()}_${uuidv4().substring(0, 6).toUpperCase()}`;
+    const randomSuffix = crypto.randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
+    const reference = `NIB_${type}_${Date.now()}_${randomSuffix}`;
 
     // Provider Gateway Fee Calculation (e.g., Paystack ~ 1.5% + N100)
     let gatewayFee = 0;
