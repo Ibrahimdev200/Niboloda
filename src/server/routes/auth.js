@@ -46,6 +46,12 @@ const buildUserSearchConditions = (input) => {
   return conditions;
 };
 
+const parseSafeDate = (val) => {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 /**
  * POST /api/auth/register
  * Supports Passenger and Driver registration with real Supabase Auth email dispatch
@@ -85,12 +91,17 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Registration is available for Passenger and Driver accounts only' });
     }
 
+    const cleanPhone = normalizePhone(phone) || String(phone).trim();
+    const cleanEmail = normalizeEmail(email);
+
+    const searchConditions = [
+      ...buildUserSearchConditions(phone),
+      ...(email ? buildUserSearchConditions(email) : [])
+    ];
+
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone },
-          ...(email ? [{ email }] : [])
-        ]
+        OR: searchConditions
       }
     });
 
@@ -102,19 +113,19 @@ router.post('/register', async (req, res) => {
     const otpCode = generate4DigitOtp(); // 4-digit code
 
     // Dispatch real OTP to email via Supabase if email is provided
-    if (email) {
-      await sendSupabaseEmailOtp(email, otpCode);
+    if (cleanEmail) {
+      await sendSupabaseEmailOtp(cleanEmail, otpCode);
     }
 
     const user = await prisma.user.create({
       data: {
-        phone,
-        email: email || null,
+        phone: cleanPhone,
+        email: cleanEmail || null,
         passwordHash,
         role: normalizedRole,
         otpCode,
         otpExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 mins
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        dateOfBirth: parseSafeDate(dateOfBirth),
         gender: gender || null,
         state: state || null,
         city: city || null
@@ -131,7 +142,7 @@ router.post('/register', async (req, res) => {
           firstName,
           lastName,
           profilePhoto: profilePhoto || null,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          dateOfBirth: parseSafeDate(dateOfBirth),
           gender: gender || null,
           address: address || null,
           state: state || null,
@@ -156,7 +167,7 @@ router.post('/register', async (req, res) => {
           firstName,
           lastName,
           profilePhoto: profilePhoto || null,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+          dateOfBirth: parseSafeDate(dateOfBirth),
           gender: gender || null,
           address: address || null,
           state: state || null,
@@ -184,9 +195,9 @@ router.post('/register', async (req, res) => {
             driverId: createdDriver.id,
             make: vehicleMake,
             model: vehicleModel,
-            year: parseInt(vehicleYear) || 2020,
+            year: parseInt(vehicleYear, 10) || 2020,
             color: vehicleColor || 'Silver',
-            plateNumber: vehiclePlate.toUpperCase(),
+            plateNumber: String(vehiclePlate).toUpperCase().trim(),
             verificationStatus: 'PENDING'
           }
         });
@@ -206,11 +217,11 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
-    const contactMsg = (email && phone)
-      ? `A 4-digit confirmation code has been sent to your email (${email}) and phone (${phone}).`
-      : email
-      ? `A 4-digit confirmation code has been sent to your email address (${email}).`
-      : `A 4-digit confirmation code has been sent to your phone number (${phone}).`;
+    const contactMsg = (cleanEmail && cleanPhone)
+      ? `A 4-digit confirmation code has been sent to your email (${cleanEmail}) and phone (${cleanPhone}).`
+      : cleanEmail
+      ? `A 4-digit confirmation code has been sent to your email address (${cleanEmail}).`
+      : `A 4-digit confirmation code has been sent to your phone number (${cleanPhone}).`;
 
     res.status(201).json({
       message: `Registration successful. ${contactMsg}`,
@@ -228,7 +239,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Server error during registration' });
+    res.status(500).json({ error: err.message || 'Server error during registration' });
   }
 });
 
@@ -292,7 +303,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error during login' });
+    res.status(500).json({ error: err.message || 'Server error during login' });
   }
 });
 

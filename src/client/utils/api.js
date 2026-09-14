@@ -19,19 +19,23 @@ export async function parseJsonResponse(response) {
     if (data && (data.error || data.message)) {
       throw new Error(data.error || data.message);
     }
+    if (typeof data === 'string' && data.trim()) {
+      throw new Error(data.trim());
+    }
     if (response.status === 404) {
       throw new Error('Backend server is not running or endpoint not found. Please start the app using "npm run dev".');
     }
     if (response.status === 502 || response.status === 503 || response.status === 504) {
       throw new Error('Backend server is offline on port 5000. Please start the app using "npm run dev".');
     }
-    if (text.includes('<title>')) {
+    if (text && text.includes('<title>')) {
       const match = text.match(/<title>(.*?)<\/title>/i);
       if (match && match[1]) {
         throw new Error(`Server error: ${match[1].trim()}`);
       }
     }
-    throw new Error(`Server error (${response.status}). Please check backend server status.`);
+    const snippet = text ? text.slice(0, 150).trim() : '';
+    throw new Error(snippet ? `Server error (${response.status}): ${snippet}` : `Server error (${response.status}). Please check backend server status.`);
   }
 
   if (data === null) {
