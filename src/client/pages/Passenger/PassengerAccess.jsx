@@ -189,18 +189,8 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
         throw new Error(data.error || 'Registration failed. Please check your information and try again.');
       }
 
-      const activeOtp = data.otpCode || data.user?.otpCode;
-      setPendingAuth({
-        user: data.user,
-        token: data.token,
-        phone: data.user?.phone || passengerForm.phone,
-        email: data.user?.email || passengerForm.email,
-        otpCode: activeOtp
-      });
-      setOtpInput(activeOtp || '');
-      setResendCooldown(60);
-      setSuccessMsg(data.message || 'Registration successful! Enter your 4-digit code below.');
-      setViewMode('OTP');
+      setSuccessMsg(data.message || 'Registration successful! Entering dashboard…');
+      login(data.user, data.token);
     } catch (err) {
       setError(err.message || 'Registration failed.');
     } finally {
@@ -240,18 +230,8 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
         throw new Error(data.error || 'Driver registration failed. Please check your information.');
       }
 
-      const activeOtp = data.otpCode || data.user?.otpCode;
-      setPendingAuth({
-        user: data.user,
-        token: data.token,
-        phone: data.user?.phone || driverForm.phone,
-        email: data.user?.email || driverForm.email,
-        otpCode: activeOtp
-      });
-      setOtpInput(activeOtp || '');
-      setResendCooldown(60);
-      setSuccessMsg(data.message || 'Driver registration successful! Enter your 4-digit code below.');
-      setViewMode('OTP');
+      setSuccessMsg(data.message || 'Driver registration successful! Entering portal…');
+      login(data.user, data.token);
     } catch (err) {
       setError(err.message || 'Driver registration failed.');
     } finally {

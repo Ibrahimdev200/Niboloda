@@ -129,12 +129,6 @@ router.post('/register', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const otpCode = generate4DigitOtp(); // 4-digit code
-
-    // Dispatch real OTP to email via Supabase if email is provided
-    if (cleanEmail) {
-      await sendSupabaseEmailOtp(cleanEmail, otpCode);
-    }
 
     const user = await prisma.user.create({
       data: {
@@ -142,8 +136,7 @@ router.post('/register', async (req, res) => {
         email: cleanEmail || null,
         passwordHash,
         role: normalizedRole,
-        otpCode,
-        otpExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 mins
+        isPhoneVerified: true,
         dateOfBirth: parseSafeDate(dateOfBirth),
         gender: gender || null,
         state: state || null,
@@ -192,7 +185,8 @@ router.post('/register', async (req, res) => {
           state: state || null,
           city: city || null,
           licenseNumber: licenseNumber || null,
-          verificationStatus: 'PENDING_VERIFICATION'
+          verificationStatus: 'APPROVED',
+          isVerified: true
         }
       });
 
@@ -217,40 +211,34 @@ router.post('/register', async (req, res) => {
             year: parseInt(vehicleYear, 10) || 2020,
             color: vehicleColor || 'Silver',
             plateNumber: String(vehiclePlate).toUpperCase().trim(),
-            verificationStatus: 'PENDING'
+            verificationStatus: 'APPROVED',
+            isVerified: true
           }
         });
         createdDriver.vehicle = createdVehicle;
       }
     }
 
-    // Create Notification
+    // Create Welcome Notification
     await prisma.notification.create({
       data: {
         userId: user.id,
-        title: 'Verification Code Sent',
-        message: `Welcome to NIBOLODA! We sent a 4-digit confirmation code (${otpCode}) to your email/phone.`,
+        title: 'Welcome to NIBOLODA',
+        message: `Welcome to NIBOLODA, ${firstName}! Your account is active and ready to go.`,
         type: 'SYSTEM'
       }
     });
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
-    const contactMsg = (cleanEmail && cleanPhone)
-      ? `A 4-digit confirmation code has been sent to your email (${cleanEmail}) and phone (${cleanPhone}).`
-      : cleanEmail
-      ? `A 4-digit confirmation code has been sent to your email address (${cleanEmail}).`
-      : `A 4-digit confirmation code has been sent to your phone number (${cleanPhone}).`;
-
     res.status(201).json({
-      message: `Registration successful. ${contactMsg}`,
-      otpCode,
+      message: 'Registration successful. Welcome to NIBOLODA!',
       user: {
         id: user.id,
         phone: user.phone,
         email: user.email,
         role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
+        isPhoneVerified: true,
         passenger: createdPassenger,
         driver: createdDriver
       },
