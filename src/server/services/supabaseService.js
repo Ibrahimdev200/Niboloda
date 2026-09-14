@@ -15,20 +15,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 /**
  * Dispatches a real OTP verification code to the user's email via Supabase Auth
  */
-async function sendSupabaseEmailOtp(email) {
+async function sendSupabaseEmailOtp(email, otpCode) {
   if (!email) return { success: false, error: 'No email provided' };
   try {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: true
+        shouldCreateUser: true,
+        data: {
+          otp_code: otpCode,
+          code: otpCode,
+          confirmation_code: otpCode
+        }
       }
     });
     if (error) {
       console.error('[Supabase Auth] Error sending email OTP:', error.message);
       return { success: false, error: error.message };
     }
-    console.log(`[Supabase Auth] Successfully dispatched OTP code to ${email}`);
+    console.log(`[Supabase Auth] Successfully dispatched 4-digit OTP code (${otpCode || 'generated'}) to ${email}`);
     return { success: true, data };
   } catch (err) {
     console.error('[Supabase Auth] Exception sending OTP:', err.message);

@@ -75,7 +75,7 @@ router.post('/register', async (req, res) => {
 
     // Dispatch real OTP to email via Supabase if email is provided
     if (email) {
-      await sendSupabaseEmailOtp(email);
+      await sendSupabaseEmailOtp(email, otpCode);
     }
 
     const user = await prisma.user.create({
@@ -171,15 +171,22 @@ router.post('/register', async (req, res) => {
       data: {
         userId: user.id,
         title: 'Verification Code Sent',
-        message: `Welcome to NIBOLODA! We sent a 4-digit confirmation code to your email/phone.`,
+        message: `Welcome to NIBOLODA! We sent a 4-digit confirmation code (${otpCode}) to your email/phone.`,
         type: 'SYSTEM'
       }
     });
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
+    const contactMsg = (email && phone)
+      ? `A 4-digit confirmation code has been sent to your email (${email}) and phone (${phone}).`
+      : email
+      ? `A 4-digit confirmation code has been sent to your email address (${email}).`
+      : `A 4-digit confirmation code has been sent to your phone number (${phone}).`;
+
     res.status(201).json({
-      message: 'Registration successful. A 4-digit confirmation code has been sent to your email and phone.',
+      message: `Registration successful. ${contactMsg}`,
+      otpCode,
       user: {
         id: user.id,
         phone: user.phone,
@@ -489,11 +496,18 @@ router.post('/resend-otp', async (req, res) => {
     });
 
     if (user.email) {
-      await sendSupabaseEmailOtp(user.email);
+      await sendSupabaseEmailOtp(user.email, newOtpCode);
     }
 
+    const contactMsg = (user.email && user.phone)
+      ? `New 4-digit verification code sent to your email (${user.email}) and phone (${user.phone}).`
+      : user.email
+      ? `New 4-digit verification code sent to your email address (${user.email}).`
+      : `New 4-digit verification code sent to your phone number (${user.phone}).`;
+
     res.json({
-      message: 'New 4-digit verification code sent to your email and phone.'
+      message: contactMsg,
+      otpCode: newOtpCode
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to resend verification code' });

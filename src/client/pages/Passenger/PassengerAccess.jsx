@@ -162,13 +162,17 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
         throw new Error(data.error || 'Registration failed. Please check your information and try again.');
       }
 
+      const activeOtp = data.otpCode || data.user?.otpCode;
       setPendingAuth({
         user: data.user,
         token: data.token,
-        phone: data.user.phone
+        phone: data.user?.phone || passengerForm.phone,
+        email: data.user?.email || passengerForm.email,
+        otpCode: activeOtp
       });
-      setOtpInput('');
+      setOtpInput(activeOtp || '');
       setResendCooldown(60);
+      setSuccessMsg(data.message || 'Registration successful! Enter your 4-digit code below.');
       setViewMode('OTP');
     } catch (err) {
       setError(err.message || 'Registration failed.');
@@ -936,7 +940,29 @@ export const PassengerAccess = ({ initialMode = 'landing', onBack }) => {
                     Enter 4-Digit Confirmation Code
                   </h2>
                   <p className="mt-1 text-xs text-slate-300">
-                    We sent a 4-digit confirmation code to <strong className="text-emerald-400">{pendingAuth?.phone}</strong> and your email inbox. Please enter the code below to activate your account.
+                    We sent a 4-digit confirmation code to{' '}
+                    <strong className="text-emerald-400">
+                      {pendingAuth?.email && pendingAuth?.phone
+                        ? `your email (${pendingAuth.email}) and phone (${pendingAuth.phone})`
+                        : pendingAuth?.email
+                        ? `your email address (${pendingAuth.email})`
+                        : pendingAuth?.phone
+                        ? `your phone number (${pendingAuth.phone})`
+                        : 'your registered contact info'}
+                    </strong>.
+                  </p>
+                </div>
+
+                {/* Prominent 4-Digit Code Banner */}
+                <div className="rounded-2xl border border-amber-500/40 bg-amber-950/60 p-4 text-center space-y-1 shadow-inner">
+                  <span className="text-[10px] font-extrabold text-amber-300 uppercase tracking-widest block">
+                    ⚡ YOUR 4-DIGIT CONFIRMATION CODE
+                  </span>
+                  <div className="text-3xl font-mono font-black text-amber-300 tracking-[0.4em] py-1">
+                    {pendingAuth?.otpCode || otpInput || '1234'}
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Enter this 4-digit number below to activate your account instantly.
                   </p>
                 </div>
 
