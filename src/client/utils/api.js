@@ -16,14 +16,14 @@ export async function parseJsonResponse(response) {
   }
 
   if (!response.ok) {
-    if (data && data.error) {
-      throw new Error(data.error);
+    if (data && (data.error || data.message)) {
+      throw new Error(data.error || data.message);
     }
     if (response.status === 404) {
-      throw new Error('API endpoint not found. Please ensure the backend server is running on port 5000.');
+      throw new Error('Backend server is not running or endpoint not found. Please start the app using "npm run dev".');
     }
     if (response.status === 502 || response.status === 503 || response.status === 504) {
-      throw new Error('Backend server is offline or unreachable on port 5000.');
+      throw new Error('Backend server is offline on port 5000. Please start the app using "npm run dev".');
     }
     if (text.includes('<title>')) {
       const match = text.match(/<title>(.*?)<\/title>/i);
